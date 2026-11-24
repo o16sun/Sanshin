@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>工工四 → 三線タブ譜 自動変換ツール</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --panel: #ffffff;
+      --ink: #1e1e1e;
+      --muted: #666666;
+      --accent: #b83a2d;
+      --accent-hover: #992c21;
+      --border: #dcd6ca;
+      --line-dark: #222222;
+      --line-dot: #888888;
+      --sel-bg: rgba(184, 58, 45, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      letter-spacing: 0.04em;
+    }
+
+    header .sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--ink);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    button:hover {
+      background: #f0ece3;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    button.primary:hover {
+      background: var(--accent-hover);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 18px auto;
+      padding: 0 16px 40px;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 0.98rem;
+      border-left: 4px solid var(--accent);
+      padding-left: 8px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+      background: #fff;
+    }
+
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+      background: #faf8f4;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--accent);
+      background: var(--sel-bg);
+    }
+
+    .dropzone img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 6px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .status {
+      font-size: 0.82rem;
+      color: var(--muted);
+      min-height: 1.2em;
+      margin-top: 8px;
+      white-space: pre-wrap;
+    }
+
+    .edit-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* 楽譜シート（A4比率ベース） */
+    .sheet-wrapper {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      overflow-x: auto;
+    }
+
+    .sheet {
+      width: 794px; /* A4 96dpi相当 */
+      min-height: 1123px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 28px 34px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .sheet-title {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      margin-bottom: 4px;
+    }
+
+    .sheet-meta {
+      text-align: right;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .beat-header {
+      display: grid;
+      grid-template-columns: 36px repeat(12, 1fr);
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 2px;
+      font-weight: 600;
+    }
+
+    .staff-block {
+      position: relative;
+      margin-bottom: 14px;
+    }
+
+    .staff-labels {
+      position: absolute;
+      left: 0;
+      top: 12px;
+      width: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 52px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .staff-grid {
+      margin-left: 36px;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      border-right: 1px solid var(--line-dark);
+      position: relative;
+    }
+
+    .beat-cell {
+      height: 76px;
+      position: relative;
+      border-left: 1px dotted var(--line-dot);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .beat-cell:nth-child(4n + 1) {
+      border-left: 1px solid var(--line-dark);
+    }
+
+    .beat-cell.selected {
+      background: var(--sel-bg);
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+
+    /* 3本の弦（女・中・男） */
+    .string-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--line-dark);
+      pointer-events: none;
+    }
+
+    .string-line.jo { top: 18px; }
+    .string-line.chu { top: 38px; }
+    .string-line.otsu { top: 58px; }
+
+    .note-mark {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      font-size: 0.86rem;
+      font-weight: 700;
+      line-height: 1;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .note-mark.open-dot {
+      font-size: 0.95rem;
+    }
+
+    .lyric-text {
+      position: absolute;
+      bottom: 1px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.72rem;
+      color: #333;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .legend {
+      margin-top: 14px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+      header,
+      .controls-col,
+      .legend {
+        display: none !important;
+      }
+      .container {
+        display: block;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+      }
+      .sheet-wrapper {
+        border: none;
+        padding: 0;
+        overflow: visible;
+      }
+      .sheet {
+        width: 100%;
+        min-height: auto;
+        box-shadow: none;
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>工工四 → 三線タブ譜 変換ツール</h1>
+      <div class="sub">画像からの自動読取（Gemini API）・手直し・A4印刷・PNG保存</div>
+    </div>
+    <div class="header-actions">
+      <button id="btnPrint">A4印刷 / PDF</button>
+      <button id="btnSavePng">画像保存 (PNG)</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 左側：設定・画像読取・手動編集 -->
+    <section class="controls-col">
+      <div class="card">
+        <h2>1. AI画像読取設定</h2>
+        <label for="apiKey">Gemini APIキー（ブラウザ内にのみ保存）</label>
+        <input type="password" id="apiKey" placeholder="AIza..." />
+
+        <label for="modelSelect">モデル</label>
+        <select id="modelSelect">
+          <option value="gemini-2.5-flash">gemini-2.5-flash（高速・推奨）</option>
+          <option value="gemini-2.5-pro">gemini-2.5-pro（高精度）</option>
+        </select>
+
+        <div id="dropzone" class="dropzone">
+          <div>工工四の画像をタップまたはドラッグ＆ドロップ</div>
+          <input type="file" id="fileInput" accept="image/*" hidden />
+          <img id="previewImg" alt="プレビュー" />
+        </div>
+
+        <button id="btnAnalyze" class="primary" style="width: 100%;" disabled>
+          画像から工工四を読み取って変換
+        </button>
+        <div id="status" class="status">サンプル楽譜を表示中です。</div>
+      </div>
+
+      <div class="card">
+        <h2>2. 曲名・手動手直し</h2>
+        <label for="songTitle">曲名</label>
+        <input type="text" id="songTitle" value="てぃんさぐぬ花" />
+
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 12px 0;" />
+
+        <div id="selectedInfo" style="font-size: 0.85rem; font-weight: 700; margin-bottom: 8px;">
+          選択中：1段目 1拍目
+        </div>
+
+        <div class="edit-row">
+          <div>
+            <label for="note1">拍頭（1つ目の音）</label>
+            <select id="note1"></select>
+          </div>
+          <div>
+            <label for="note2">裏拍（2つ目の音・任意）</label>
+            <select id="note2"></select>
+          </div>
+        </div>
+
+        <label for="lyricInput">歌詞（1拍分）</label>
+        <input type="text" id="lyricInput" placeholder="例：てぃ / んさ" />
+
+        <div style="display: flex; gap: 8px;">
+          <button id="btnApplyEdit" class="primary" style="flex: 1;">この拍に反映</button>
+          <button id="btnClearCell">空にする</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右側：変換された3線タブ譜 -->
+    <section class="sheet-wrapper">
+      <div id="sheet" class="sheet">
+        <div id="displayTitle" class="sheet-title">てぃんさぐぬ花</div>
+        <div class="sheet-meta">上線：女弦 ／ 中線：中弦 ／ 下線：男弦（●＝開放弦）</div>
+        <div id="scoreContainer"></div>
+        <div class="legend">
+          <span><strong>女弦（上）</strong>：工(●) / 五(人) / 六(中) / 七(小) / 八</span>
+          <span><strong>中弦（中）</strong>：四(●) / 上(人) / 中(中) / 尺(小)</span>
+          <span><strong>男弦（下）</strong>：合(●) / 乙(人) / 老(中)</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // 工工四文字 → { line: 'jo'|'chu'|'otsu', symbol: string, isOpen: boolean }
+    const KUNKUNSHI_MAP = {
+      "合": { line: "otsu", symbol: "●", isOpen: true },
+      "乙": { line: "otsu", symbol: "人", isOpen: false },
+      "老": { line: "otsu", symbol: "中", isOpen: false },
+      "四": { line: "chu",  symbol: "●", isOpen: true },
+      "上": { line: "chu",  symbol: "人", isOpen: false },
+      "中": { line: "chu",  symbol: "中", isOpen: false },
+      "尺": { line: "chu",  symbol: "小", isOpen: false },
+      "工": { line: "jo",   symbol: "●", isOpen: true },
+      "五": { line: "jo",   symbol: "人", isOpen: false },
+      "六": { line: "jo",   symbol: "中", isOpen: false },
+      "七": { line: "jo",   symbol: "小", isOpen: false },
+      "八": { line: "jo",   symbol: "八", isOpen: false }
+    };
+
+    const ROWS = 6;
+    const BEATS = 12;
+
+    // 初期サンプルデータ（てぃんさぐぬ花 冒頭抜粋）
+    function createEmptyScore() {
+      return Array.from({ length: ROWS }, () =>
+        Array.from({ length: BEATS }, () => ({
+          notes: [], // [{ k: "中", ... }]
+          lyric: ""
+        }))
+      );
+    }
+
+    let scoreData = createEmptyScore();
+    let selected = { row: 0, col: 0 };
+    let uploadedBase64 = null;
+    let uploadedMime = "image/jpeg";
+
+    function setNotesForCell(cell, kunkunshiList) {
+      cell.notes = kunkunshiList
+        .map((k) => k.trim())
+        .filter((k) => KUNKUNSHI_MAP[k])
+        .map((k) => ({ k, ...KUNKUNSHI_MAP[k] }));
+    }
+
+    function loadSampleData() {
+      scoreData = createEmptyScore();
+      const sample = [
+        // 1段目
+        [
+          ["中", "てぃ"], ["中", "ん"], ["工", "さ"], ["尺", "ぐ"], ["中", "ぬ"], ["上", "は"],
+          ["四", "な"], ["老", "や"], ["四", "ち"], ["中", "み"], ["中", "さ"], ["尺", "ち"]
+        ],
+        // 2段目
+        [
+          ["中", "う"], ["上", "り"], ["四", "てぃ"], ["老", "ん"], ["四", "さ"], ["四", "ぐ"],
+          ["中", "ぬ"], ["中", "は"], ["尺", "な"], ["中", "や"], ["上", "ち"], ["四", "み"]
+        ]
+      ];
+      sample.forEach((rowArr, rIdx) => {
+        rowArr.forEach(([kStr, lyric], cIdx) => {
+          const chars = Array.from(kStr).filter((ch) => KUNKUNSHI_MAP[ch]);
+          setNotesForCell(scoreData[rIdx][cIdx], chars);
+          scoreData[rIdx][cIdx].lyric = lyric || "";
+        });
+      });
+    }
+
+    // 編集用セレクトボックスの初期化
+    function initNoteSelects() {
+      const options = [
+        { value: "", label: "（なし）" },
+        ...Object.keys(KUNKUNSHI_MAP).map((k) => {
+          const m = KUNKUNSHI_MAP[k];
+          const lineLabel = m.line === "jo" ? "女" : m.line === "chu" ? "中" : "男";
+          return { value: k, label: `${k}（${lineLabel}・${m.symbol}）` };
+        })
+      ];
+      ["note1", "note2"].forEach((id) => {
+        const sel = document.getElementById(id);
+        sel.innerHTML = "";
+        options.forEach((opt) => {
+          const o = document.createElement("option");
+          o.value = opt.value;
+          o.textContent = opt.label;
+          sel.appendChild(o);
+        });
+      });
+    }
+
+    function syncEditorWithSelection() {
+      const cell = scoreData[selected.row][selected.col];
+      document.getElementById("selectedInfo").textContent =
+        `選択中：${selected.row + 1}段目 ${selected.col + 1}拍目`;
+      document.getElementById("note1").value = cell.notes[0]?.k || "";
+      document.getElementById("note2").value = cell.notes[1]?.k || "";
+      document.getElementById("lyricInput").value = cell.lyric || "";
+    }
+
+    function renderScore() {
+      document.getElementById("displayTitle").textContent =
+        document.getElementById("songTitle").value.trim() || "無題";
+
+      const container = document.getElementById("scoreContainer");
+      container.innerHTML = "";
+
+      for (let r = 0; r < ROWS; r++) {
+        // 拍番号ヘッダ
+        const header = document.createElement("div");
+        header.className = "beat-header";
+        header.innerHTML = `<div></div>` + Array.from({ length: BEATS }, (_, b) => `<div>${b + 1}</div>`).join("");
+        container.appendChild(header);
+
+        // 譜面1段分
+        const block = document.createElement("div");
+        block.className = "staff-block";
+
+        const labels = document.createElement("div");
+        labels.className = "staff-labels";
+        labels.innerHTML = `<div>女</div><div>中</div><div>男</div>`;
+        block.appendChild(labels);
+
+        const grid = document.createElement("div");
+        grid.className = "staff-grid";
+
+        for (let c = 0; c < BEATS; c++) {
+          const cellData = scoreData[r][c];
+          const cellEl = document.createElement("div");
+          cellEl.className = "beat-cell";
+          if (selected.row === r && selected.col === c) {
+            cellEl.classList.add("selected");
+          }
+
+          cellEl.innerHTML = `
+            <div class="string-line jo"></div>
+            <div class="string-line chu"></div>
+            <div class="string-line otsu"></div>
+          `;
+
+          const topMap = { jo: 18, chu: 38, otsu: 58 };
+          const xPositions = cellData.notes.length === 1 ? [50] : [30, 72];
+
+          cellData.notes.slice(0, 2).forEach((n, idx) => {
+            const mark = document.createElement("div");
+            mark.className = "note-mark" + (n.isOpen ? " open-dot" : "");
+            mark.style.top = `${topMap[n.line]}px`;
+            mark.style.left = `${xPositions[idx]}%`;
+            mark.textContent = n.symbol;
+            cellEl.appendChild(mark);
+          });
+
+          if (cellData.lyric) {
+            const lyric = document.createElement("div");
+            lyric.className = "lyric-text";
+            lyric.textContent = cellData.lyric;
+            cellEl.appendChild(lyric);
+          }
+
+          cellEl.addEventListener("click", () => {
+            selected = { row: r, col: c };
+            syncEditorWithSelection();
+            renderScore();
+          });
+
+          grid.appendChild(cellEl);
+        }
+
+        block.appendChild(grid);
+        container.appendChild(block);
+      }
+    }
+
+    // 画像アップロード処理
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("fileInput");
+    const previewImg = document.getElementById("previewImg");
+    const btnAnalyze = document.getElementById("btnAnalyze");
+
+    dropzone.addEventListener("click", () => fileInput.click());
+    dropzone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropzone.classList.add("dragover");
+    });
+    dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+    dropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("dragover");
+      if (e.dataTransfer.files?.[0]) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener("change", (e) => {
+      if (e.target.files?.[0]) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    function handleFile(file) {
+      uploadedMime = file.type || "image/jpeg";
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        previewImg.src = dataUrl;
+        previewImg.style.display = "block";
+        uploadedBase64 = dataUrl.split(",")[1];
+        btnAnalyze.disabled = false;
+        document.getElementById("status").textContent = "画像を読み込みました。「画像から工工四を読み取って変換」を押してください。";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Gemini API 呼び出し
+    btnAnalyze.addEventListener("click", async () => {
+      const apiKey = document.getElementById("apiKey").value.trim();
+      const model = document.getElementById("modelSelect").value;
+      const statusEl = document.getElementById("status");
+
+      if (!apiKey) {
+        statusEl.textContent = "Gemini APIキーを入力してください。";
+        return;
+      }
+      if (!uploadedBase64) {
+        statusEl.textContent = "先に工工四の画像をアップロードしてください。";
+        return;
+      }
+
+      localStorage.setItem("kunkunshi_gemini_api_key", apiKey);
+      btnAnalyze.disabled = true;
+      statusEl.textContent = "AIが工工四を解析中...";
+
+      const prompt = `
+この画像は沖縄三線の工工四（くんくんしー）の楽譜です。
+縦書きの工工四は通常、右の列から左の列へ進みます。
+最大${ROWS}段、各段${BEATS}拍（1〜12）として読み取り、JSONのみで出力してください。
+
+使える工工四の文字：合, 乙, 老, 四, 上, 中, 尺, 工, 五, 六, 七, 八
+1拍に2つの音が入る場合は notes に2文字入れてください（例: ["中", "尺"]）。
+右側に歌詞がある場合は lyric にひらがな等で入れてください。曲名がわかれば title に入れてください。
+
+出力形式（JSONのみ、マークダウン不要）:
+{
+  "title": "曲名",
+  "rows": [
+    [
+      { "notes": ["中"], "lyric": "てぃ" }
+    ]
+  ]
+}
+`;
+
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    { text: prompt },
+                    {
+                      inlineData: {
+                        mimeType: uploadedMime,
+                        data: uploadedBase64
+                      }
+                    }
+                  ]
+                }
+              ],
+              generationConfig: {
+                responseMimeType: "application/json"
+              }
+            })
+          }
+        );
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`APIエラー (${res.status}): ${errText}`);
+        }
+
+        const data = await res.json();
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        const parsed = JSON.parse(rawText);
+
+        if (parsed.title) {
+          document.getElementById("songTitle").value = parsed.title;
+        }
+
+        const nextScore = createEmptyScore();
+        if (Array.isArray(parsed.rows)) {
+          parsed.rows.slice(0, ROWS).forEach((rowArr, rIdx) => {
+            if (!Array.isArray(rowArr)) return;
+            rowArr.slice(0, BEATS).forEach((beatObj, cIdx) => {
+              const rawNotes = Array.isArray(beatObj?.notes) ? beatObj.notes : [];
+              setNotesForCell(nextScore[rIdx][cIdx], rawNotes);
+              nextScore[rIdx][cIdx].lyric = typeof beatObj?.lyric === "string" ? beatObj.lyric : "";
+            });
+          });
+        }
+
+        scoreData = nextScore;
+        syncEditorWithSelection();
+        renderScore();
+        statusEl.textContent = "変換完了！気になる箇所はクリックして手動修正できます。";
+      } catch (err) {
+        statusEl.textContent = "読取に失敗しました：\n" + err.message;
+      } finally {
+        btnAnalyze.disabled = false;
+      }
+    });
+
+    // 手動修正の反映
+    document.getElementById("btnApplyEdit").addEventListener("click", () => {
+      const n1 = document.getElementById("note1").value;
+      const n2 = document.getElementById("note2").value;
+      const lyric = document.getElementById("lyricInput").value.trim();
+
+      const cell = scoreData[selected.row][selected.col];
+      setNotesForCell(cell, [n1, n2].filter(Boolean));
+      cell.lyric = lyric;
+      renderScore();
+    });
+
+    document.getElementById("btnClearCell").addEventListener("click", () => {
+      scoreData[selected.row][selected.col] = { notes: [], lyric: "" };
+      syncEditorWithSelection();
+      renderScore();
+    });
+
+    document.getElementById("songTitle").addEventListener("input", renderScore);
+
+    // 印刷
+    document.getElementById("btnPrint").addEventListener("click", () => {
+      window.print();
+    });
+
+    // PNG画像保存（SVGをCanvasに描画してダウンロード）
+    document.getElementById("btnSavePng").addEventListener("click", () => {
+      const sheet = document.getElementById("sheet");
+      const title = (document.getElementById("songTitle").value.trim() || "sanshin-score")
+        .replace(/[\\/:*?"<>|]/g, "_");
+
+      const rect = sheet.getBoundingClientRect();
+      const width = Math.round(rect.width);
+      const height = Math.round(rect.height);
+
+      const cloned = sheet.cloneNode(true);
+      cloned.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+
+      const styles = Array.from(document.querySelectorAll("style"))
+        .map((s) => s.innerHTML)
+        .join("\n");
+
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+          <foreignObject width="100%" height="100%">
+            <div xmlns="http://www.w3.org/1999/xhtml">
+              <style>${styles}</style>
+              ${cloned.outerHTML}
+            </div>
+          </foreignObject>
+        </svg>
+      `;
+
+      const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = width * 2;
+        canvas.height = height * 2;
+        const ctx = canvas.getContext("2d");
+        ctx.scale(2, 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0);
+
+        URL.revokeObjectURL(url);
+        const pngUrl = canvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = pngUrl;
+        a.download = `${title}.png`;
+        a.click();
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        alert("PNG出力に失敗しました。A4印刷 / PDFボタンから保存をお試しください。");
+      };
+
+      img.src = url;
+    });
+
+    // 起動時初期化
+    const savedKey = localStorage.getItem("kunkunshi_gemini_api_key");
+    if (savedKey) {
+      document.getElementById("apiKey").value = savedKey;
+    }
+    initNoteSelects();
+    loadSampleData();
+    syncEditorWithSelection();
+    renderScore();
+  </script>
+</body>
+</html>
