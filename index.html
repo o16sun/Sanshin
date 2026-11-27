@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>三線タブ譜 変換・印刷ツール（工工四／ドレミ／C〜B）</title>
+  <title>三線タブ譜 変換ツール（入門用）</title>
   <style>
     :root {
       --bg: #f4f1ea;
@@ -15,7 +15,6 @@
       --border: #dcd6ca;
       --line-dark: #222222;
       --line-dot: #888888;
-      --sel-bg: rgba(184, 58, 45, 0.12);
     }
 
     * {
@@ -85,16 +84,16 @@
     }
 
     .container {
-      max-width: 1420px;
+      max-width: 1380px;
       margin: 18px auto;
       padding: 0 16px 40px;
       display: grid;
-      grid-template-columns: 390px 1fr;
+      grid-template-columns: 360px 1fr;
       gap: 20px;
       align-items: start;
     }
 
-    @media (max-width: 980px) {
+    @media (max-width: 960px) {
       .container {
         grid-template-columns: 1fr;
       }
@@ -105,12 +104,11 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 16px;
-      margin-bottom: 16px;
     }
 
     .card h2 {
-      margin: 0 0 10px;
-      font-size: 0.98rem;
+      margin: 0 0 12px;
+      font-size: 1rem;
       border-left: 4px solid var(--accent);
       padding-left: 8px;
     }
@@ -130,71 +128,35 @@
       padding: 8px 10px;
       border: 1px solid var(--border);
       border-radius: 6px;
-      font-size: 0.9rem;
-      margin-bottom: 10px;
+      font-size: 0.92rem;
+      margin-bottom: 12px;
       background: #fff;
       font-family: inherit;
     }
 
     textarea {
-      min-height: 92px;
+      min-height: 110px;
       resize: vertical;
     }
 
     .hint {
       font-size: 0.78rem;
       color: var(--muted);
-      margin-top: -4px;
-      margin-bottom: 10px;
-    }
-
-    .edit-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .palette-tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 6px;
-    }
-
-    .palette-tab {
-      flex: 1;
-      padding: 5px 6px;
-      font-size: 0.78rem;
-    }
-
-    .palette-tab.active {
-      background: var(--ink);
-      color: #fff;
-      border-color: var(--ink);
-    }
-
-    .quick-palette {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
+      margin-top: -6px;
       margin-bottom: 12px;
     }
 
-    .palette-btn {
-      padding: 6px 4px;
-      font-size: 0.78rem;
-      text-align: center;
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
     }
 
-    .cell-readout {
-      background: #faf8f4;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 10px;
-      font-size: 0.8rem;
-      margin-bottom: 10px;
+    .btn-row button {
+      flex: 1;
     }
 
-    /* 楽譜シート（A4比率ベース） */
+    /* 楽譜シート */
     .sheet-wrapper {
       background: #fff;
       border: 1px solid var(--border);
@@ -268,18 +230,11 @@
       height: 76px;
       position: relative;
       border-left: 1px dotted var(--line-dot);
-      cursor: pointer;
       user-select: none;
     }
 
     .beat-cell:nth-child(4n + 1) {
       border-left: 1px solid var(--line-dark);
-    }
-
-    .beat-cell.selected {
-      background: var(--sel-bg);
-      outline: 2px solid var(--accent);
-      outline-offset: -2px;
     }
 
     .string-line {
@@ -371,8 +326,8 @@
 <body>
   <header>
     <div>
-      <h1>三線タブ譜 変換・印刷ツール</h1>
-      <div class="sub">工工四・ドレミ・C〜B 相互変換（高低音区別対応）／クリック手直し／A4印刷・PNG保存</div>
+      <h1>三線タブ譜 変換ツール（入門用）</h1>
+      <div class="sub">工工四・ドレミ・C〜Bを入れて変換／A4印刷・PNG保存</div>
     </div>
     <div class="header-actions">
       <button id="btnPrint" class="primary">A4印刷 / PDF</button>
@@ -381,77 +336,40 @@
   </header>
 
   <main class="container">
-    <!-- 左側：一括変換＆手動編集 -->
     <section class="controls-col">
       <div class="card">
-        <h2>1. 一括変換（工工四／ドレミ／C〜B）</h2>
+        <h2>楽譜をつくる</h2>
+
+        <label for="songTitle">曲名</label>
+        <input type="text" id="songTitle" value="てぃんさぐぬ花" />
 
         <label for="inputMode">入力形式</label>
         <select id="inputMode">
-          <option value="auto">自動判別（工工四・ドレミ・C〜B 混在OK）</option>
+          <option value="auto">自動判別（工工四・ドレミ・C〜B）</option>
           <option value="kunkunshi">工工四（合 乙 老 四 上 中 尺 工 五 六 七 八）</option>
           <option value="doremi">ドレミ（低いド＝ド / 高いド＝ド↑）</option>
           <option value="pitch">英語音名（低いド＝C / 高いド＝C↑）</option>
         </select>
 
-        <label for="bulkInput">楽譜テキスト（スペースや改行区切り）</label>
-        <textarea id="bulkInput" placeholder="例（工工四）：中 中 工 尺 中 上&#10;例（ドレミ）：ラ ラ ド↑ シ ラ ソ&#10;例（音名）：A A C↑ B A G"></textarea>
+        <label for="bulkInput">音符（スペースや改行区切り）</label>
+        <textarea id="bulkInput" placeholder="例：中 中 工 尺 中 上 四 老 四 中 中 尺"></textarea>
         <div class="hint">
-          高い音（女弦）は「ド↑」「高ド」「C↑」「C5」のように入力すると低いド（合）と区別されます。<br />
-          1拍に2音入れる場合は「中尺」「ラソ」「AG」のように続けて書くか「中/尺」のように繋いでください。
+          1拍に2音入れる場合は「中尺」「ラソ」のように続けて書きます。高いドは「ド↑」「高ド」「C↑」で指定できます。
         </div>
 
-        <label for="bulkLyrics">歌詞（任意・スペースや改行区切り）</label>
+        <label for="bulkLyrics">歌詞（任意・スペース区切り）</label>
         <input type="text" id="bulkLyrics" placeholder="例：てぃ ん さ ぐ ぬ は な や ち み さ ち" />
 
-        <div style="display: flex; gap: 8px;">
-          <button id="btnBulkConvert" class="primary" style="flex: 1;">譜面に一括変換</button>
-          <button id="btnResetSample">サンプルに戻す</button>
+        <div class="btn-row">
+          <button id="btnConvert" class="primary">楽譜に変換</button>
+          <button id="btnResetSample">サンプル</button>
         </div>
-      </div>
-
-      <div class="card">
-        <h2>2. 曲名・マスごとの手直し</h2>
-        <label for="songTitle">曲名</label>
-        <input type="text" id="songTitle" value="てぃんさぐぬ花" />
-
-        <hr style="border: none; border-top: 1px solid var(--border); margin: 12px 0;" />
-
-        <div id="selectedInfo" style="font-size: 0.85rem; font-weight: 700; margin-bottom: 6px;">
-          選択中：1段目 1拍目
-        </div>
-        <div id="cellReadout" class="cell-readout">工工四：― ／ ドレミ：― ／ 音名：―</div>
-
-        <div class="palette-tabs">
-          <button type="button" class="palette-tab active" data-palette="kunkunshi">工工四</button>
-          <button type="button" class="palette-tab" data-palette="doremi">ドレミ</button>
-          <button type="button" class="palette-tab" data-palette="pitch">C〜B</button>
-        </div>
-        <div id="quickPalette" class="quick-palette"></div>
-
-        <div class="edit-row">
-          <div>
-            <label for="note1">拍頭（1つ目の音）</label>
-            <select id="note1"></select>
-          </div>
-          <div>
-            <label for="note2">裏拍（2つ目の音・任意）</label>
-            <select id="note2"></select>
-          </div>
-        </div>
-
-        <label for="lyricInput">歌詞（この拍分）</label>
-        <input type="text" id="lyricInput" placeholder="例：てぃ" />
-
-        <div style="display: flex; gap: 8px;">
-          <button id="btnApplyEdit" class="primary" style="flex: 1;">この拍に反映</button>
-          <button id="btnClearCell">空にする</button>
-          <button id="btnClearAll">全消去</button>
+        <div class="btn-row">
+          <button id="btnClear">入力をクリア</button>
         </div>
       </div>
     </section>
 
-    <!-- 右側：変換された3線タブ譜 -->
     <section class="sheet-wrapper">
       <div id="sheet" class="sheet">
         <div id="displayTitle" class="sheet-title">てぃんさぐぬ花</div>
@@ -467,7 +385,6 @@
   </main>
 
   <script>
-    // 工工四の基準定義（低いド＝合[●] / 高いド＝工[◎]・女弦高音域に isHigh: true）
     const NOTE_DEFS = [
       { k: "合", line: "otsu", symbol: "●", isOpen: true,  isHigh: false, doremi: "ド",   pitch: "C" },
       { k: "乙", line: "otsu", symbol: "人", isOpen: false, isHigh: false, doremi: "レ",   pitch: "D" },
@@ -485,15 +402,12 @@
 
     const BY_KUNKUNSHI = Object.fromEntries(NOTE_DEFS.map((d) => [d.k, d]));
 
-    // 工工四・ドレミ・英語音名 → 基準工工四文字（長い表記から優先マッチさせる）
     const ALIAS_ENTRIES = [
-      // 高音（女弦）ドレミ・音名
       ["ファ↑", "七"], ["ふぁ↑", "七"], ["高ファ", "七"], ["高ふぁ", "七"], ["F↑", "七"], ["f↑", "七"], ["F5", "七"],
       ["ド↑", "工"], ["ど↑", "工"], ["高ド", "工"], ["高ど", "工"], ["C↑", "工"], ["c↑", "工"], ["C5", "工"],
       ["レ↑", "五"], ["れ↑", "五"], ["高レ", "五"], ["高れ", "五"], ["D↑", "五"], ["d↑", "五"], ["D5", "五"],
       ["ミ↑", "六"], ["み↑", "六"], ["高ミ", "六"], ["高み", "六"], ["E↑", "六"], ["e↑", "六"], ["E5", "六"],
       ["ソ↑", "八"], ["そ↑", "八"], ["高ソ", "八"], ["高そ", "八"], ["G↑", "八"], ["g↑", "八"], ["G5", "八"],
-      // シャープ・フラット（2〜3文字）
       ["ファ♯", "上"], ["ファ#", "上"], ["ド♯", "乙"], ["ド#", "乙"],
       ["レ♯", "老"], ["レ#", "老"], ["ソ♯", "中"], ["ソ#", "中"], ["ラ♯", "尺"], ["ラ#", "尺"],
       ["C#", "乙"], ["C♯", "乙"], ["DB", "乙"], ["Db", "乙"],
@@ -501,7 +415,6 @@
       ["F#", "上"], ["F♯", "上"], ["GB", "上"], ["Gb", "上"],
       ["G#", "中"], ["G♯", "中"], ["AB", "中"], ["Ab", "中"],
       ["A#", "尺"], ["A♯", "尺"], ["BB", "尺"], ["Bb", "尺"],
-      // 標準（低〜中音域）ドレミ
       ["ファ", "四"], ["ふぁ", "四"],
       ["ド", "合"], ["ど", "合"],
       ["レ", "乙"], ["れ", "乙"],
@@ -509,7 +422,6 @@
       ["ソ", "上"], ["そ", "上"],
       ["ラ", "中"], ["ら", "中"],
       ["シ", "尺"], ["し", "尺"], ["ティ", "尺"], ["てぃ", "尺"],
-      // 標準 英語音名
       ["C", "合"], ["c", "合"], ["C4", "合"],
       ["D", "乙"], ["d", "乙"], ["D4", "乙"],
       ["E", "老"], ["e", "老"], ["E4", "老"],
@@ -517,7 +429,6 @@
       ["G", "上"], ["g", "上"], ["G4", "上"],
       ["A", "中"], ["a", "中"], ["A4", "中"],
       ["B", "尺"], ["b", "尺"], ["B4", "尺"],
-      // 工工四
       ["合", "合"], ["乙", "乙"], ["老", "老"],
       ["四", "四"], ["上", "上"], ["中", "中"], ["尺", "尺"],
       ["工", "工"], ["五", "五"], ["六", "六"], ["七", "七"], ["八", "八"]
@@ -525,7 +436,6 @@
 
     const ROWS = 6;
     const BEATS = 12;
-    let activePalette = "kunkunshi";
 
     function createEmptyScore() {
       return Array.from({ length: ROWS }, () =>
@@ -537,7 +447,6 @@
     }
 
     let scoreData = createEmptyScore();
-    let selected = { row: 0, col: 0 };
 
     function setNotesForCell(cell, kunkunshiList) {
       cell.notes = kunkunshiList
@@ -545,32 +454,6 @@
         .filter((k) => BY_KUNKUNSHI[k])
         .slice(0, 2)
         .map((k) => ({ ...BY_KUNKUNSHI[k] }));
-    }
-
-    function loadSampleData() {
-      scoreData = createEmptyScore();
-      const sample = [
-        [
-          ["中", "てぃ"], ["中", "ん"], ["工", "さ"], ["尺", "ぐ"], ["中", "ぬ"], ["上", "は"],
-          ["四", "な"], ["老", "や"], ["四", "ち"], ["中", "み"], ["中", "さ"], ["尺", "ち"]
-        ],
-        [
-          ["中", "う"], ["上", "り"], ["四", "てぃ"], ["老", "ん"], ["四", "さ"], ["四", "ぐ"],
-          ["中", "ぬ"], ["中", "は"], ["尺", "な"], ["中", "や"], ["上", "ち"], ["四", "み"]
-        ]
-      ];
-      sample.forEach((rowArr, rIdx) => {
-        rowArr.forEach(([kStr, lyric], cIdx) => {
-          const chars = Array.from(kStr).filter((ch) => BY_KUNKUNSHI[ch]);
-          setNotesForCell(scoreData[rIdx][cIdx], chars);
-          scoreData[rIdx][cIdx].lyric = lyric || "";
-        });
-      });
-
-      document.getElementById("bulkInput").value =
-        "中 中 工 尺 中 上 四 老 四 中 中 尺\n中 上 四 老 四 四 中 中 尺 中 上 四";
-      document.getElementById("bulkLyrics").value =
-        "てぃ ん さ ぐ ぬ は な や ち み さ ち う り てぃ ん さ ぐ ぬ は な や ち み";
     }
 
     function parseTokenToKunkunshi(token, mode) {
@@ -601,178 +484,7 @@
       return result;
     }
 
-    function renderPalette() {
-      const palette = document.getElementById("quickPalette");
-      palette.innerHTML = "";
-
-      NOTE_DEFS.forEach((d) => {
-        const lineLabel = d.line === "jo" ? "女" : d.line === "chu" ? "中" : "男";
-        let labelText = `${d.k} (${lineLabel}:${d.symbol})`;
-        if (activePalette === "doremi") {
-          labelText = `${d.doremi} [${d.k}]`;
-        } else if (activePalette === "pitch") {
-          labelText = `${d.pitch} [${d.k}]`;
-        }
-
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "palette-btn";
-        btn.textContent = labelText;
-        btn.addEventListener("click", () => {
-          const cell = scoreData[selected.row][selected.col];
-          const second = cell.notes[1]?.k || "";
-          setNotesForCell(cell, [d.k, second].filter(Boolean));
-          advanceSelection();
-          syncEditorWithSelection();
-          renderScore();
-        });
-        palette.appendChild(btn);
-      });
-    }
-
-    function initControls() {
-      const options = [
-        { value: "", label: "（なし）" },
-        ...NOTE_DEFS.map((d) => {
-          const lineLabel = d.line === "jo" ? "女" : d.line === "chu" ? "中" : "男";
-          const hiLabel = d.isHigh ? "・高音" : "";
-          return {
-            value: d.k,
-            label: `${d.k} / ${d.doremi} / ${d.pitch}（${lineLabel}${hiLabel}・${d.symbol}）`
-          };
-        })
-      ];
-
-      ["note1", "note2"].forEach((id) => {
-        const sel = document.getElementById(id);
-        sel.innerHTML = "";
-        options.forEach((opt) => {
-          const o = document.createElement("option");
-          o.value = opt.value;
-          o.textContent = opt.label;
-          sel.appendChild(o);
-        });
-      });
-
-      document.querySelectorAll(".palette-tab").forEach((tab) => {
-        tab.addEventListener("click", () => {
-          document.querySelectorAll(".palette-tab").forEach((t) => t.classList.remove("active"));
-          tab.classList.add("active");
-          activePalette = tab.dataset.palette;
-          renderPalette();
-        });
-      });
-
-      renderPalette();
-    }
-
-    function advanceSelection() {
-      let idx = selected.row * BEATS + selected.col + 1;
-      if (idx >= ROWS * BEATS) idx = 0;
-      selected = {
-        row: Math.floor(idx / BEATS),
-        col: idx % BEATS
-      };
-    }
-
-    function syncEditorWithSelection() {
-      const cell = scoreData[selected.row][selected.col];
-      document.getElementById("selectedInfo").textContent =
-        `選択中：${selected.row + 1}段目 ${selected.col + 1}拍目`;
-      document.getElementById("note1").value = cell.notes[0]?.k || "";
-      document.getElementById("note2").value = cell.notes[1]?.k || "";
-      document.getElementById("lyricInput").value = cell.lyric || "";
-
-      const readout = document.getElementById("cellReadout");
-      if (cell.notes.length === 0) {
-        readout.textContent = "工工四：― ／ ドレミ：― ／ 音名：―";
-      } else {
-        const kStr = cell.notes.map((n) => n.k).join("・");
-        const drStr = cell.notes.map((n) => n.doremi).join("・");
-        const pStr = cell.notes.map((n) => n.pitch).join("・");
-        readout.textContent = `工工四：${kStr} ／ ドレミ：${drStr} ／ 音名：${pStr}`;
-      }
-    }
-
-    function renderScore() {
-      document.getElementById("displayTitle").textContent =
-        document.getElementById("songTitle").value.trim() || "無題";
-
-      const container = document.getElementById("scoreContainer");
-      container.innerHTML = "";
-
-      for (let r = 0; r < ROWS; r++) {
-        const header = document.createElement("div");
-        header.className = "beat-header";
-        header.innerHTML = `<div></div>` + Array.from({ length: BEATS }, (_, b) => `<div>${b + 1}</div>`).join("");
-        container.appendChild(header);
-
-        const block = document.createElement("div");
-        block.className = "staff-block";
-
-        const labels = document.createElement("div");
-        labels.className = "staff-labels";
-        labels.innerHTML = `<div>女</div><div>中</div><div>男</div>`;
-        block.appendChild(labels);
-
-        const grid = document.createElement("div");
-        grid.className = "staff-grid";
-
-        for (let c = 0; c < BEATS; c++) {
-          const cellData = scoreData[r][c];
-          const cellEl = document.createElement("div");
-          cellEl.className = "beat-cell";
-          if (selected.row === r && selected.col === c) {
-            cellEl.classList.add("selected");
-          }
-
-          cellEl.innerHTML = `
-            <div class="string-line jo"></div>
-            <div class="string-line chu"></div>
-            <div class="string-line otsu"></div>
-          `;
-
-          const topMap = { jo: 18, chu: 38, otsu: 58 };
-          const xPositions = cellData.notes.length === 1 ? [50] : [30, 72];
-
-          cellData.notes.slice(0, 2).forEach((n, idx) => {
-            const mark = document.createElement("div");
-            mark.className = "note-mark" + (n.isOpen ? " open-dot" : "");
-            mark.style.top = `${topMap[n.line]}px`;
-            mark.style.left = `${xPositions[idx]}%`;
-
-            // 高い音（女弦・押さえ）には小さな「↑」を付けて低音と一目で区別（工は◎で区別）
-            if (n.isHigh && !n.isOpen) {
-              mark.innerHTML = `${n.symbol}<span class="high-badge">↑</span>`;
-            } else {
-              mark.textContent = n.symbol;
-            }
-            cellEl.appendChild(mark);
-          });
-
-          if (cellData.lyric) {
-            const lyric = document.createElement("div");
-            lyric.className = "lyric-text";
-            lyric.textContent = cellData.lyric;
-            cellEl.appendChild(lyric);
-          }
-
-          cellEl.addEventListener("click", () => {
-            selected = { row: r, col: c };
-            syncEditorWithSelection();
-            renderScore();
-          });
-
-          grid.appendChild(cellEl);
-        }
-
-        block.appendChild(grid);
-        container.appendChild(block);
-      }
-    }
-
-    // 一括変換
-    document.getElementById("btnBulkConvert").addEventListener("click", () => {
+    function convertFromInputs() {
       const mode = document.getElementById("inputMode").value;
       const rawText = document.getElementById("bulkInput").value;
       const rawLyrics = document.getElementById("bulkLyrics").value.trim();
@@ -808,40 +520,93 @@
       }
 
       scoreData = nextScore;
-      syncEditorWithSelection();
       renderScore();
-    });
+    }
 
-    document.getElementById("btnResetSample").addEventListener("click", () => {
-      loadSampleData();
-      syncEditorWithSelection();
-      renderScore();
-    });
+    function loadSample() {
+      document.getElementById("songTitle").value = "てぃんさぐぬ花";
+      document.getElementById("bulkInput").value =
+        "中 中 工 尺 中 上 四 老 四 中 中 尺\n中 上 四 老 四 四 中 中 尺 中 上 四";
+      document.getElementById("bulkLyrics").value =
+        "てぃ ん さ ぐ ぬ は な や ち み さ ち う り てぃ ん さ ぐ ぬ は な や ち み";
+      convertFromInputs();
+    }
 
-    document.getElementById("btnApplyEdit").addEventListener("click", () => {
-      const n1 = document.getElementById("note1").value;
-      const n2 = document.getElementById("note2").value;
-      const lyric = document.getElementById("lyricInput").value.trim();
+    function renderScore() {
+      document.getElementById("displayTitle").textContent =
+        document.getElementById("songTitle").value.trim() || "無題";
 
-      const cell = scoreData[selected.row][selected.col];
-      setNotesForCell(cell, [n1, n2].filter(Boolean));
-      cell.lyric = lyric;
-      syncEditorWithSelection();
-      renderScore();
-    });
+      const container = document.getElementById("scoreContainer");
+      container.innerHTML = "";
 
-    document.getElementById("btnClearCell").addEventListener("click", () => {
-      scoreData[selected.row][selected.col] = { notes: [], lyric: "" };
-      syncEditorWithSelection();
-      renderScore();
-    });
+      for (let r = 0; r < ROWS; r++) {
+        const header = document.createElement("div");
+        header.className = "beat-header";
+        header.innerHTML = `<div></div>` + Array.from({ length: BEATS }, (_, b) => `<div>${b + 1}</div>`).join("");
+        container.appendChild(header);
 
-    document.getElementById("btnClearAll").addEventListener("click", () => {
+        const block = document.createElement("div");
+        block.className = "staff-block";
+
+        const labels = document.createElement("div");
+        labels.className = "staff-labels";
+        labels.innerHTML = `<div>女</div><div>中</div><div>男</div>`;
+        block.appendChild(labels);
+
+        const grid = document.createElement("div");
+        grid.className = "staff-grid";
+
+        for (let c = 0; c < BEATS; c++) {
+          const cellData = scoreData[r][c];
+          const cellEl = document.createElement("div");
+          cellEl.className = "beat-cell";
+
+          cellEl.innerHTML = `
+            <div class="string-line jo"></div>
+            <div class="string-line chu"></div>
+            <div class="string-line otsu"></div>
+          `;
+
+          const topMap = { jo: 18, chu: 38, otsu: 58 };
+          const xPositions = cellData.notes.length === 1 ? [50] : [30, 72];
+
+          cellData.notes.slice(0, 2).forEach((n, idx) => {
+            const mark = document.createElement("div");
+            mark.className = "note-mark" + (n.isOpen ? " open-dot" : "");
+            mark.style.top = `${topMap[n.line]}px`;
+            mark.style.left = `${xPositions[idx]}%`;
+
+            if (n.isHigh && !n.isOpen) {
+              mark.innerHTML = `${n.symbol}<span class="high-badge">↑</span>`;
+            } else {
+              mark.textContent = n.symbol;
+            }
+            cellEl.appendChild(mark);
+          });
+
+          if (cellData.lyric) {
+            const lyric = document.createElement("div");
+            lyric.className = "lyric-text";
+            lyric.textContent = cellData.lyric;
+            cellEl.appendChild(lyric);
+          }
+
+          grid.appendChild(cellEl);
+        }
+
+        block.appendChild(grid);
+        container.appendChild(block);
+      }
+    }
+
+    document.getElementById("btnConvert").addEventListener("click", convertFromInputs);
+    document.getElementById("btnResetSample").addEventListener("click", loadSample);
+    document.getElementById("btnClear").addEventListener("click", () => {
+      document.getElementById("bulkInput").value = "";
+      document.getElementById("bulkLyrics").value = "";
       scoreData = createEmptyScore();
-      syncEditorWithSelection();
       renderScore();
     });
-
     document.getElementById("songTitle").addEventListener("input", renderScore);
 
     document.getElementById("btnPrint").addEventListener("click", () => {
@@ -905,10 +670,7 @@
       img.src = url;
     });
 
-    initControls();
-    loadSampleData();
-    syncEditorWithSelection();
-    renderScore();
+    loadSample();
   </script>
 </body>
 </html>
